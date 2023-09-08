@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Movies</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="navbarContainer"></div>
+    <div class="container mt-5">
+        <h1>Saved Movies</h1>
+        <div class="row" id="movieContainer"></div>
+    </div>
+
+    <!-- Add Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"></script>
+
+    <script>
+
+
+fetch('navbar_admin.html')
+      .then(response => response.text())
+      .then(navbarHtml => {
+        document.getElementById('navbarContainer').innerHTML = navbarHtml;
+      });
+
+        const token = localStorage.getItem('token');
+        console.log('Token in saved_movies--->>>>', token);
+        var selectedId = null;
+
+        function showMovies(){
+
+        fetch('http://localhost:3002/movies', {
+            method: 'GET',
+            headers: {
+                'x-access-token': token,
+            },
+        })
+            .then(res => res.json())
+            .then(data => {
+                const movieContainer = document.getElementById("movieContainer");
+                console.log("Movies in data --->>>", data);
+                localStorage.setItem('Movies',JSON.stringify(data.data));   
+
+                data.data.movies.forEach((movie,index)=> {
+                    const movieCard = document.createElement("div");
+                    movieCard.className = "col-md-4 mb-3";
+
+                    movieCard.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <img src="https://i.ytimg.com/vi/v1lOXGZnKpY/maxresdefault.jpg" class="card-img-top" alt="Movie Poster">
+                            <h5 class="card-title">${movie.name}</h5>
+                            <p class="card-text">Released on: ${movie.released_on}</p>
+                            <p class="card-text"><strong>Tickets:</strong> ${movie.tickets}</p>
+                            <p class="card-text"><strong>Price:</strong>  ${movie.price}</p>
+                         
+                            <button class="btn btn-primary" onclick="updateMovie('${movie.id}')">Update</button>
+
+                            <button class="btn btn-primary" onclick="deleteMovie('${movie.id}')">Delete</button>
+                            <!-- Bootstrap Update Movie Modal -->
+<div class="modal fade" id="updateMovieModal" tabindex="-1" aria-labelledby="updateMovieModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateMovieModalLabel">Update Movie</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Update Movie Form -->
+                <form id="updateMovieForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Movie Name</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="released_on" class="form-label">Release Date</label>
+                        <input type="text" class="form-control" id="released_on" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tickets" class="form-label">Tickets</label>
+                        <input type="text" class="form-control" id="tickets" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Price/label>
+                        <input type="text" class="form-control" id="price" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveUpdatedMovie('${movie.id}')">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+                       
+
+
+
+                        </div>
+                    </div>
+                `;
+
+                    movieContainer.appendChild(movieCard);
+                });
+
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+
+        }
+
+
+            function updateMovie(movieID) {
+                
+                console.log("Move id in update button",movieID);
+                selectedId= movieID;
+                console.log("Selected id --->>>",selectedId);
+    const selectedMovie = JSON.parse(localStorage.getItem('Movies')).movies.find(movie => movie.id === movieID);
+
+    // Populate the modal with the selected movie's data
+    document.getElementById('name').value = selectedMovie.name;
+    document.getElementById('released_on').value = selectedMovie.released_on;
+    document.getElementById('price').value = selectedMovie.price;
+    document.getElementById('tickets').value = selectedMovie.tickets;
+            
+    // Show the modal
+    $('#updateMovieModal').modal('show');
+}
+
+function saveUpdatedMovie() {
+   // const selectedMovie = JSON.parse(localStorage.getItem('Movies')).movies.find(movie => movie.id === movieID);
+
+    console.log("Move id in save button",selectedId);
+    const updatedMovie = {
+        name: document.getElementById('name').value,
+        released_on: document.getElementById('released_on').value,
+        tickets: document.getElementById('tickets').value,
+        price: document.getElementById('price').value,
+        // Add more fields for updating movie information here
+    };
+    fetch(`http://localhost:3002/movies/${selectedId}`, {
+            method: 'PUT',
+            headers: {
+                'x-access-token': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedMovie)
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Update Movie--->>>", data)
+    $('#updateMovieModal').modal('hide');
+    window.location.reload()
+    showMovies();
+}).catch(error => {
+            console.error('Error:', error);
+        });
+
+    }
+
+    function deleteMovie(movieId){
+
+    
+
+    fetch(`http://localhost:3002/movies/${movieId}`, {
+            method: 'DELETE',
+            headers: {
+                'x-access-token': token,
+                'Content-Type': 'application/json'
+            },
+            
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Update Movie--->>>", data)
+             /  window.location.reload()
+    $('#updateMovieModal').modal('hide');
+}).catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+
+    document.addEventListener("DOMContentLoaded", showMovies);
+    </script>
+</body>
+
+</html>

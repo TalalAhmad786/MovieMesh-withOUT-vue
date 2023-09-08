@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Movies</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../index.css">
+</head>
+
+<body>
+    <div id="navbarContainer"></div>
+    <div class="container mt-5">
+        <h1>Users List</h1>
+        <div class="row" id="userContainer"></div>
+    </div>
+
+    <!-- Add Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"></script>
+
+    <script>
+
+fetch('navbar_admin.html')
+      .then(response => response.text())
+      .then(navbarHtml => {
+        document.getElementById('navbarContainer').innerHTML = navbarHtml;
+      });
+
+
+        const token = localStorage.getItem('token');
+        console.log('Token in saved_movies--->>>>', token);
+
+        if (token === null) {
+            alert("Please Login First");
+            window.location.href = '/';
+        } else {
+            document.addEventListener("DOMContentLoaded", showMovies);
+        }
+
+        function showMovies() {
+
+            fetch('http://localhost:3002/users', {
+                method: 'GET',
+                headers: {
+                    'x-access-token': token,
+                },
+            })
+                .then(res => res.json())
+                .then(data => {
+                    const userContainer = document.getElementById("userContainer");
+                    console.log("Users in data --->>>", data);
+
+                    data.data.users.forEach((user, index) => {
+                        const userCard = document.createElement("div");
+                        userCard.className = "col-md-4 mb-3";
+
+                        userCard.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${user.name}</h5>
+                            <p class="card-text">Role : <span id="role_${user.id}">${user.role}</span></p>
+                            <div class="tabs">
+                                <input type="radio" id="userRadio_${user.id}" name="roleRadio_${user.id}" value="user" ${user.role === 'user' ? 'checked' : ''} onchange="changeRole('${user.id}', 'user')">
+                                <label class="tab" for="userRadio_${user.id}">User</label>
+                                <input type="radio" id="adminRadio_${user.id}" name="roleRadio_${user.id}" value="admin" ${user.role === 'admin' ? 'checked' : ''} onchange="changeRole('${user.id}', 'admin')">
+                                <label class="tab" for="adminRadio_${user.id}">Admin</label>
+                                <span class="glider"></span>
+                            </div>
+                        </div>
+                    </div>`;
+
+                        userContainer.appendChild(userCard);
+                    });
+
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+
+        }
+
+        function changeRole(userId, newRole) {
+            document.getElementById(`role_${userId}`).innerText = newRole;
+            const user = JSON.parse(localStorage.getItem('User'));
+
+            if (userId === user.user._id) {
+                console.log("Same user");
+                confirm("This user is currently logged in. Changing the role will log you out from the application.");
+                localStorage.removeItem("User", "token");
+                window.location.href = "/";
+            }
+
+            fetch(`http://localhost:3002/users/${userId}/updaterole`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ role: newRole }),
+            })
+                .then(res => res.json())
+                .then(data => {
+                    console.log(data);
+                });
+
+        }
+    </script>
+</body>
+
+</html>
+
+<style>
+    .body {
+        background-color: #4473aa;
+    }
+</style>

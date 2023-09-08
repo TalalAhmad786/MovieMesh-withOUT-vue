@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Creator</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="navbarContainer"></div>
+    <div class="container mt-5">
+        <h1>Movie Creator</h1>
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" id="name" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="Released" class="form-label">Released on</label>
+            <textarea id="released_on" class="form-control" rows="4"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="createMovie()">Create Movie</button>
+        <hr>
+        <h2>Saved Movies</h2>
+        <ul id="movieList"></ul>
+    </div>
+
+    <!-- Add Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        // Function to create and save a movie
+
+
+        fetch('navbar_admin.html')
+      .then(response => response.text())
+      .then(navbarHtml => {
+        document.getElementById('navbarContainer').innerHTML = navbarHtml;
+      });
+        const token = localStorage.getItem('token');
+        console.log('Token in home--->>>>', token);
+
+        
+        function createMovie() {
+            const name = document.getElementById("name").value;
+            const released_on = document.getElementById("released_on").value;
+            console.log("Name and RELEASED ON--->>>>", name, released_on)
+            if (!name|| !released_on) {
+                alert("Please fill in both title and description.");
+                return;
+            }
+
+            // Create a movie object
+            const movie = {
+                name: name,
+                released_on: released_on
+            };
+
+            fetch('http://localhost:3002/movies',{
+
+                method: 'POST',
+                headers: {
+                'x-access-token': token,
+                'Content-Type': 'application/json'
+                },
+
+            
+                body: JSON.stringify(movie)
+
+            })
+            .then(res => res.json())
+        .then(data =>  {
+                console.log(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+        document.getElementById("name").value = "";
+        document.getElementById("released_on").value="";
+            
+
+
+            // Check if there are existing movies in local storage
+            // let movies = JSON.parse(localStorage.getItem("movies")) || [];
+
+            // // Add the new movie to the array
+            // movies.push(movie);
+
+            // // Save the updated movies array to local storage
+            // localStorage.setItem("movies", JSON.stringify(movies));
+
+            // // Clear the input fields
+            // document.getElementById("title").value = "";
+            // document.getElementById("description").value = "";
+
+            // Refresh the movie list
+          //  displayMovies();
+        }
+
+        // Function to display saved movies
+    //     function displayMovies() {
+    //         const movieList = document.getElementById("movieList");
+    //         movieList.innerHTML = "";
+    //         const movies = JSON.parse(localStorage.getItem("movies")) || [];
+    //         movies.forEach((movie, index) => {
+
+                
+    //             const li = document.createElement("li");
+    //             li.innerHTML = `<strong>${movie.title}</strong>: ${movie.description}`;
+    //             movieList.appendChild(li);
+
+    //         });
+
+    //    }
+
+       // Initial display of saved movies
+       //displayMovies();
+    </script>
+</body>
+</html>
